@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean View Resort – Login</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body class="login-page">
+
+<div class="login-wrapper">
+    <div class="login-card">
+        <div class="login-logo">
+            <div class="logo-icon">🌊</div>
+            <h1>Ocean View Resort</h1>
+            <p>Reservation Management System</p>
+        </div>
+
+        <!-- Server-side error message -->
+        <% String error = (String) request.getAttribute("error");
+           if (error != null) { %>
+        <div class="alert alert-error"><%= error %></div>
+        <% } %>
+
+        <form action="${pageContext.request.contextPath}/LoginServlet" method="POST" id="loginForm">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username"
+                       placeholder="Enter your username" required autocomplete="username">
+                <span class="field-error" id="usernameError"></span>
+            </div>
+
+            <div class="form-group">
+                <label for="password">Password</label>
+                <div class="password-wrap">
+                    <input type="password" id="password" name="password"
+                           placeholder="Enter your password" required autocomplete="current-password">
+                    <button type="button" class="toggle-pwd" onclick="togglePassword()">👁</button>
+                </div>
+                <span class="field-error" id="passwordError"></span>
+            </div>
+
+            <button type="submit" class="btn btn-primary btn-full">Sign In</button>
+        </form>
+
+        <div class="login-footer">
+            <small>© 2025 Ocean View Resort, Galle, Sri Lanka</small>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePassword() {
+    const pwd = document.getElementById('password');
+    pwd.type = pwd.type === 'password' ? 'text' : 'password';
+}
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    let valid = true;
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
+
+    document.getElementById('usernameError').textContent = '';
+    document.getElementById('passwordError').textContent = '';
+
+    if (!username) {
+        document.getElementById('usernameError').textContent = 'Username is required.';
+        valid = false;
+    }
+    if (!password) {
+        document.getElementById('passwordError').textContent = 'Password is required.';
+        valid = false;
+    }
+    if (!valid) e.preventDefault();
+});
+</script>
+</body>
+</html>
