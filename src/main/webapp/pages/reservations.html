@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean View Resort – All Reservations</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-icon">🌊</span>
+        <div><strong>Ocean View Resort</strong><small>Management System</small></div>
+    </div>
+    <ul class="nav-links">
+        <li><a href="dashboard.html"><span>📊</span> Dashboard</a></li>
+        <li><a href="add-reservation.html"><span>➕</span> New Reservation</a></li>
+        <li><a href="reservations.html" class="active"><span>📋</span> All Reservations</a></li>
+        <li><a href="view-reservation.html"><span>🔍</span> View Reservation</a></li>
+        <li><a href="billing.html"><span>💳</span> Billing</a></li>
+        <li><a href="rooms.html"><span>🛏</span> Rooms</a></li>
+        <li><a href="help.html"><span>❓</span> Help</a></li>
+        <li><a href="../LogoutServlet" class="logout-link"><span>🚪</span> Logout</a></li>
+    </ul>
+</nav>
+<main class="main-content">
+    <header class="page-header">
+        <h2>All Reservations</h2>
+        <a href="add-reservation.html" class="btn btn-primary">+ New Reservation</a>
+    </header>
+
+    <div class="card">
+        <div class="card-header">
+            <input type="text" id="filterInput" placeholder="🔍 Search by name or reservation number..."
+                   style="width:300px" oninput="filterTable()">
+            <select id="statusFilter" onchange="filterTable()">
+                <option value="">All Statuses</option>
+                <option value="CONFIRMED">Confirmed</option>
+                <option value="CHECKED_IN">Checked In</option>
+                <option value="CHECKED_OUT">Checked Out</option>
+                <option value="CANCELLED">Cancelled</option>
+            </select>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table" id="allTable">
+                <thead>
+                    <tr>
+                        <th>Reservation #</th><th>Guest</th><th>Contact</th>
+                        <th>Room</th><th>Check-In</th><th>Check-Out</th>
+                        <th>Amount</th><th>Status</th><th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="allBody"><tr><td colspan="9" class="loading">Loading...</td></tr></tbody>
+            </table>
+        </div>
+    </div>
+</main>
+<script>
+let allReservations = [];
+
+async function loadAll() {
+    const resp = await fetch('../api/reservations/');
+    allReservations = await resp.json();
+    renderTable(allReservations);
+}
+
+function renderTable(list) {
+    const tbody = document.getElementById('allBody');
+    tbody.innerHTML = list.map(r => `
+        <tr>
+            <td><strong>${r.reservationNumber}</strong></td>
+            <td>${r.guestName}</td>
+            <td>${r.contactNumber}</td>
+            <td>${r.roomNumber}</td>
+            <td>${r.checkInDate}</td>
+            <td>${r.checkOutDate}</td>
+            <td>LKR ${Number(r.totalAmount).toLocaleString()}</td>
+            <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+            <td>
+                <a href="view-reservation.html?ref=${r.reservationNumber}" class="btn-link">View</a>
+                <a href="billing.html?ref=${r.reservationNumber}" class="btn-link">Bill</a>
+            </td>
+        </tr>`).join('') || '<tr><td colspan="9">No reservations found.</td></tr>';
+}
+
+function filterTable() {
+    const search = document.getElementById('filterInput').value.toLowerCase();
+    const status = document.getElementById('statusFilter').value;
+    const filtered = allReservations.filter(r =>
+        (r.reservationNumber.toLowerCase().includes(search) ||
+         r.guestName.toLowerCase().includes(search)) &&
+        (!status || r.status === status)
+    );
+    renderTable(filtered);
+}
+loadAll();
+</script>
+</body>
+</html>

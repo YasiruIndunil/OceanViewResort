@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean View Resort – New Reservation</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-icon">🌊</span>
+        <div><strong>Ocean View Resort</strong><small>Management System</small></div>
+    </div>
+    <ul class="nav-links">
+        <li><a href="dashboard.html"><span>📊</span> Dashboard</a></li>
+        <li><a href="add-reservation.html" class="active"><span>➕</span> New Reservation</a></li>
+        <li><a href="reservations.html"><span>📋</span> All Reservations</a></li>
+        <li><a href="view-reservation.html"><span>🔍</span> View Reservation</a></li>
+        <li><a href="billing.html"><span>💳</span> Billing</a></li>
+        <li><a href="rooms.html"><span>🛏</span> Rooms</a></li>
+        <li><a href="help.html"><span>❓</span> Help</a></li>
+        <li><a href="../LogoutServlet" class="logout-link"><span>🚪</span> Logout</a></li>
+    </ul>
+</nav>
+
+<main class="main-content">
+    <header class="page-header">
+        <h2>New Reservation</h2>
+        <a href="reservations.html" class="btn btn-secondary">← Back to List</a>
+    </header>
+
+    <div class="card">
+        <div class="card-header"><h3>Guest & Booking Details</h3></div>
+        <div id="alertBox"></div>
+
+        <form id="reservationForm" novalidate>
+            <div class="form-section">
+                <h4 class="section-title">👤 Guest Information</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="guestName">Full Name <span class="required">*</span></label>
+                        <input type="text" id="guestName" name="guestName"
+                               placeholder="e.g. Kamal Perera" required>
+                        <span class="field-error" id="guestNameError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="contactNumber">Contact Number <span class="required">*</span></label>
+                        <input type="tel" id="contactNumber" name="contactNumber"
+                               placeholder="e.g. 0771234567" required>
+                        <span class="field-error" id="contactNumberError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email"
+                               placeholder="e.g. kamal@email.com">
+                        <span class="field-error" id="emailError"></span>
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" rows="2"
+                                  placeholder="Guest's full address"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h4 class="section-title">🛏 Booking Details</h4>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="roomId">Select Room <span class="required">*</span></label>
+                        <select id="roomId" name="roomId" required>
+                            <option value="">-- Select Available Room --</option>
+                        </select>
+                        <span class="field-error" id="roomIdError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="numGuests">Number of Guests <span class="required">*</span></label>
+                        <input type="number" id="numGuests" name="numGuests"
+                               min="1" max="10" value="1" required>
+                        <span class="field-error" id="numGuestsError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkInDate">Check-In Date <span class="required">*</span></label>
+                        <input type="date" id="checkInDate" name="checkInDate" required>
+                        <span class="field-error" id="checkInDateError"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="checkOutDate">Check-Out Date <span class="required">*</span></label>
+                        <input type="date" id="checkOutDate" name="checkOutDate" required>
+                        <span class="field-error" id="checkOutDateError"></span>
+                    </div>
+                    <div class="form-group form-group-full">
+                        <label for="specialRequests">Special Requests</label>
+                        <textarea id="specialRequests" name="specialRequests" rows="2"
+                                  placeholder="Any special requirements..."></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cost Preview -->
+            <div class="cost-preview" id="costPreview" style="display:none">
+                <h4>💰 Estimated Cost</h4>
+                <table class="cost-table">
+                    <tr><td>Room Rate:</td><td id="previewRate">–</td></tr>
+                    <tr><td>Number of Nights:</td><td id="previewNights">–</td></tr>
+                    <tr><td>Room Charge:</td><td id="previewCharge">–</td></tr>
+                    <tr><td>Tax (10%):</td><td id="previewTax">–</td></tr>
+                    <tr class="total-row"><td><strong>Total:</strong></td><td id="previewTotal"><strong>–</strong></td></tr>
+                </table>
+            </div>
+
+            <div class="form-actions">
+                <button type="submit" class="btn btn-primary" id="submitBtn">
+                    ✅ Confirm Reservation
+                </button>
+                <button type="reset" class="btn btn-secondary" onclick="resetForm()">
+                    🔄 Reset
+                </button>
+            </div>
+        </form>
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+const today = new Date().toISOString().split('T')[0];
+document.getElementById('checkInDate').min = today;
+document.getElementById('checkOutDate').min = today;
+
+// Load available rooms
+async function loadRooms() {
+    const resp = await fetch('../api/rooms?filter=available');
+    const rooms = await resp.json();
+    const sel   = document.getElementById('roomId');
+    rooms.forEach(r => {
+        const opt = document.createElement('option');
+        opt.value = r.roomId;
+        opt.textContent = `${r.roomNumber} – ${r.roomType} (LKR ${Number(r.ratePerNight).toLocaleString()}/night, Max ${r.maxGuests} guests)`;
+        opt.dataset.rate = r.ratePerNight;
+        opt.dataset.max  = r.maxGuests;
+        sel.appendChild(opt);
+    });
+}
+loadRooms();
+
+// Live cost preview
+function updateCostPreview() {
+    const roomSel = document.getElementById('roomId');
+    const checkIn  = document.getElementById('checkInDate').value;
+    const checkOut = document.getElementById('checkOutDate').value;
+    const preview  = document.getElementById('costPreview');
+
+    if (!roomSel.value || !checkIn || !checkOut) { preview.style.display = 'none'; return; }
+
+    const selectedOpt = roomSel.options[roomSel.selectedIndex];
+    const rate        = parseFloat(selectedOpt.dataset.rate);
+    const nights      = Math.ceil((new Date(checkOut) - new Date(checkIn)) / 86400000);
+
+    if (nights <= 0) { preview.style.display = 'none'; return; }
+
+    const charge = rate * nights;
+    const tax    = charge * 0.10;
+    const total  = charge + tax;
+
+    document.getElementById('previewRate').textContent   = `LKR ${rate.toLocaleString()}`;
+    document.getElementById('previewNights').textContent = nights;
+    document.getElementById('previewCharge').textContent = `LKR ${charge.toLocaleString()}`;
+    document.getElementById('previewTax').textContent    = `LKR ${tax.toLocaleString()}`;
+    document.getElementById('previewTotal').innerHTML    = `<strong>LKR ${total.toLocaleString()}</strong>`;
+    preview.style.display = 'block';
+}
+
+['roomId','checkInDate','checkOutDate'].forEach(id =>
+    document.getElementById(id).addEventListener('change', updateCostPreview));
+
+// Set min checkout after checkin changes
+document.getElementById('checkInDate').addEventListener('change', function() {
+    document.getElementById('checkOutDate').min = this.value;
+});
+
+// Form submission
+document.getElementById('reservationForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    document.getElementById('submitBtn').disabled = true;
+    document.getElementById('submitBtn').textContent = 'Processing...';
+
+    const formData = new FormData(this);
+    const params   = new URLSearchParams(formData);
+
+    try {
+        const resp = await fetch('../api/reservations/', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: params
+        });
+        const data = await resp.json();
+
+        if (resp.ok) {
+            showAlert('success',
+                `✅ Reservation confirmed! Number: <strong>${data.reservationNumber}</strong>`);
+            this.reset();
+            document.getElementById('costPreview').style.display = 'none';
+        } else {
+            showAlert('error', '❌ ' + (data.error || 'Reservation failed.'));
+        }
+    } catch(err) {
+        showAlert('error', '❌ Network error. Please try again.');
+    } finally {
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('submitBtn').textContent = '✅ Confirm Reservation';
+    }
+});
+
+function validateForm() {
+    let valid = true;
+    clearErrors();
+
+    const name    = document.getElementById('guestName').value.trim();
+    const contact = document.getElementById('contactNumber').value.trim();
+    const email   = document.getElementById('email').value.trim();
+    const roomId  = document.getElementById('roomId').value;
+    const checkIn = document.getElementById('checkInDate').value;
+    const checkOut= document.getElementById('checkOutDate').value;
+    const guests  = parseInt(document.getElementById('numGuests').value);
+
+    if (!name || name.length < 2) {
+        setError('guestName', 'Full name is required (min 2 characters).');
+        valid = false;
+    }
+    if (!contact || !/^[0-9+\-\s]{7,20}$/.test(contact)) {
+        setError('contactNumber', 'Valid contact number is required.');
+        valid = false;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError('email', 'Invalid email format.');
+        valid = false;
+    }
+    if (!roomId) {
+        setError('roomId', 'Please select a room.');
+        valid = false;
+    }
+    if (!checkIn) {
+        setError('checkInDate', 'Check-in date is required.');
+        valid = false;
+    }
+    if (!checkOut) {
+        setError('checkOutDate', 'Check-out date is required.');
+        valid = false;
+    }
+    if (checkIn && checkOut && checkIn >= checkOut) {
+        setError('checkOutDate', 'Check-out must be after check-in.');
+        valid = false;
+    }
+    if (!guests || guests < 1) {
+        setError('numGuests', 'At least 1 guest required.');
+        valid = false;
+    }
+    return valid;
+}
+
+function setError(id, msg) {
+    document.getElementById(id + 'Error').textContent = msg;
+    document.getElementById(id).classList.add('input-error');
+}
+function clearErrors() {
+    document.querySelectorAll('.field-error').forEach(e => e.textContent = '');
+    document.querySelectorAll('.input-error').forEach(e => e.classList.remove('input-error'));
+}
+function showAlert(type, msg) {
+    const box = document.getElementById('alertBox');
+    box.innerHTML = `<div class="alert alert-${type}">${msg}</div>`;
+    box.scrollIntoView({behavior:'smooth'});
+}
+function resetForm() {
+    clearErrors();
+    document.getElementById('alertBox').innerHTML = '';
+    document.getElementById('costPreview').style.display = 'none';
+}
+</script>
+</body>
+</html>

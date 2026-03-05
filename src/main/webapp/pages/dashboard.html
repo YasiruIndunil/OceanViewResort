@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean View Resort – Dashboard</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<!-- ── Sidebar Navigation ── -->
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-icon">🌊</span>
+        <div>
+            <strong>Ocean View Resort</strong>
+            <small>Management System</small>
+        </div>
+    </div>
+
+    <ul class="nav-links">
+        <li><a href="dashboard.html" class="active"><span>📊</span> Dashboard</a></li>
+        <li><a href="add-reservation.html"><span>➕</span> New Reservation</a></li>
+        <li><a href="reservations.html"><span>📋</span> All Reservations</a></li>
+        <li><a href="view-reservation.html"><span>🔍</span> View Reservation</a></li>
+        <li><a href="billing.html"><span>💳</span> Billing</a></li>
+        <li><a href="rooms.html"><span>🛏</span> Rooms</a></li>
+        <li><a href="help.html"><span>❓</span> Help</a></li>
+        <li><a href="../LogoutServlet" class="logout-link"><span>🚪</span> Logout</a></li>
+    </ul>
+</nav>
+
+<!-- ── Main Content ── -->
+<main class="main-content">
+    <header class="page-header">
+        <h2>Dashboard</h2>
+        <div class="user-info">
+            <span id="welcomeUser">Welcome, Staff</span>
+            <span id="currentDate"></span>
+        </div>
+    </header>
+
+    <!-- Stats Cards -->
+    <div class="stats-grid">
+        <div class="stat-card blue">
+            <div class="stat-icon">📋</div>
+            <div class="stat-info">
+                <h3 id="totalReservations">–</h3>
+                <p>Total Reservations</p>
+            </div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-icon">✅</div>
+            <div class="stat-info">
+                <h3 id="confirmedCount">–</h3>
+                <p>Confirmed</p>
+            </div>
+        </div>
+        <div class="stat-card orange">
+            <div class="stat-icon">🛏</div>
+            <div class="stat-info">
+                <h3 id="availableRooms">–</h3>
+                <p>Available Rooms</p>
+            </div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-icon">❌</div>
+            <div class="stat-info">
+                <h3 id="cancelledCount">–</h3>
+                <p>Cancelled</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Reservations Table -->
+    <div class="card">
+        <div class="card-header">
+            <h3>Recent Reservations</h3>
+            <a href="add-reservation.html" class="btn btn-primary btn-sm">+ New Reservation</a>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table" id="recentTable">
+                <thead>
+                    <tr>
+                        <th>Res. Number</th>
+                        <th>Guest Name</th>
+                        <th>Room</th>
+                        <th>Check-In</th>
+                        <th>Check-Out</th>
+                        <th>Amount (LKR)</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="recentBody">
+                    <tr><td colspan="8" class="loading">Loading...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</main>
+
+<script src="../js/app.js"></script>
+<script>
+    document.getElementById('currentDate').textContent =
+        new Date().toLocaleDateString('en-US', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+
+    async function loadDashboard() {
+        try {
+            const [resList, roomList] = await Promise.all([
+                fetch('../api/reservations/').then(r => r.json()),
+                fetch('../api/rooms?filter=available').then(r => r.json())
+            ]);
+
+            document.getElementById('totalReservations').textContent = resList.length || 0;
+            document.getElementById('confirmedCount').textContent =
+                resList.filter(r => r.status === 'CONFIRMED').length;
+            document.getElementById('cancelledCount').textContent =
+                resList.filter(r => r.status === 'CANCELLED').length;
+            document.getElementById('availableRooms').textContent = roomList.length || 0;
+
+            const tbody = document.getElementById('recentBody');
+            const recent = resList.slice(0, 10);
+            tbody.innerHTML = recent.map(r => `
+                <tr>
+                    <td><strong>${r.reservationNumber}</strong></td>
+                    <td>${r.guestName}</td>
+                    <td>${r.roomNumber} (${r.roomType})</td>
+                    <td>${r.checkInDate}</td>
+                    <td>${r.checkOutDate}</td>
+                    <td>${Number(r.totalAmount).toLocaleString()}</td>
+                    <td><span class="badge badge-${r.status.toLowerCase()}">${r.status}</span></td>
+                    <td>
+                        <a href="view-reservation.html?ref=${r.reservationNumber}" class="btn-link">View</a>
+                        <a href="billing.html?ref=${r.reservationNumber}" class="btn-link">Bill</a>
+                    </td>
+                </tr>`).join('') || '<tr><td colspan="8">No reservations found.</td></tr>';
+
+        } catch(e) {
+            console.error('Dashboard load error:', e);
+        }
+    }
+
+    loadDashboard();
+</script>
+</body>
+</html>

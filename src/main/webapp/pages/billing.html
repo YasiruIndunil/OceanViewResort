@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ocean View Resort – Billing</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="sidebar-brand">
+        <span class="brand-icon">🌊</span>
+        <div><strong>Ocean View Resort</strong><small>Management System</small></div>
+    </div>
+    <ul class="nav-links">
+        <li><a href="dashboard.html"><span>📊</span> Dashboard</a></li>
+        <li><a href="add-reservation.html"><span>➕</span> New Reservation</a></li>
+        <li><a href="reservations.html"><span>📋</span> All Reservations</a></li>
+        <li><a href="view-reservation.html"><span>🔍</span> View Reservation</a></li>
+        <li><a href="billing.html" class="active"><span>💳</span> Billing</a></li>
+        <li><a href="rooms.html"><span>🛏</span> Rooms</a></li>
+        <li><a href="help.html"><span>❓</span> Help</a></li>
+        <li><a href="../LogoutServlet" class="logout-link"><span>🚪</span> Logout</a></li>
+    </ul>
+</nav>
+
+<main class="main-content">
+    <header class="page-header"><h2>Billing & Invoice</h2></header>
+
+    <div class="card">
+        <div class="search-row">
+            <input type="text" id="billSearch" placeholder="Enter Reservation Number" style="flex:1">
+            <button onclick="loadBill()" class="btn btn-primary">💳 Generate / View Bill</button>
+        </div>
+    </div>
+
+    <div id="billSection" style="display:none">
+        <div class="invoice" id="invoiceBox">
+            <div class="invoice-header">
+                <div>
+                    <h2>🌊 Ocean View Resort</h2>
+                    <p>Galle, Southern Province, Sri Lanka</p>
+                    <p>Tel: +94 91 2234567 | Email: info@oceanviewresort.lk</p>
+                </div>
+                <div class="invoice-meta">
+                    <h3>INVOICE</h3>
+                    <p id="invDate"></p>
+                </div>
+            </div>
+            <hr>
+            <div class="invoice-guest">
+                <div><strong>Bill To:</strong><br><span id="invGuest"></span></div>
+                <div><strong>Reservation #:</strong><br><span id="invResNum"></span></div>
+            </div>
+            <table class="invoice-table">
+                <thead>
+                    <tr><th>Description</th><th>Details</th><th>Amount (LKR)</th></tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Room Accommodation</td>
+                        <td id="invRoomDetail"></td>
+                        <td id="invRoomCharge"></td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr><td colspan="2">Sub Total</td><td id="invSubTotal"></td></tr>
+                    <tr><td colspan="2">Tax (10%)</td><td id="invTax"></td></tr>
+                    <tr class="invoice-total"><td colspan="2"><strong>TOTAL</strong></td><td id="invTotal"></td></tr>
+                </tfoot>
+            </table>
+            <div class="invoice-footer">
+                <p>Thank you for staying at Ocean View Resort!</p>
+                <p><em>This is a system-generated invoice.</em></p>
+            </div>
+        </div>
+        <div class="print-actions">
+            <button onclick="window.print()" class="btn btn-primary">🖨 Print Invoice</button>
+            <a href="dashboard.html" class="btn btn-secondary">← Back</a>
+        </div>
+    </div>
+</main>
+
+<script>
+const urlRef = new URLSearchParams(window.location.search).get('ref');
+if (urlRef) {
+    document.getElementById('billSearch').value = urlRef;
+    loadBill();
+}
+
+async function loadBill() {
+    const resNum = document.getElementById('billSearch').value.trim();
+    if (!resNum) { alert('Enter reservation number.'); return; }
+
+    const resp = await fetch(`../api/bills/${resNum}`);
+    const data = await resp.json();
+
+    if (!resp.ok) { alert(data.error || 'Bill error'); return; }
+
+    document.getElementById('invDate').textContent    = 'Date: ' + new Date(data.generatedAt).toLocaleDateString();
+    document.getElementById('invGuest').textContent   = data.guestName;
+    document.getElementById('invResNum').textContent  = data.reservationNumber;
+    document.getElementById('invRoomDetail').textContent =
+        `${data.roomNumber} (${data.roomType}) × ${data.numNights} nights`;
+    document.getElementById('invRoomCharge').textContent = `LKR ${Number(data.roomCharge).toLocaleString()}`;
+    document.getElementById('invSubTotal').textContent   = `LKR ${Number(data.roomCharge).toLocaleString()}`;
+    document.getElementById('invTax').textContent        = `LKR ${Number(data.taxAmount).toLocaleString()}`;
+    document.getElementById('invTotal').innerHTML        =
+        `<strong>LKR ${Number(data.totalAmount).toLocaleString()}</strong>`;
+
+    document.getElementById('billSection').style.display = 'block';
+}
+</script>
+</body>
+</html>
